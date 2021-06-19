@@ -1,0 +1,65 @@
+# THIS TO WORK WITH SINGLE CONTAINER
+#version: '3'
+#services:
+#  web:
+#    image: docker-spring:latest7
+#    volumes:
+#      - ~mohamed:/var/lib/project/data
+#
+#    ports:
+#      - 8080:8080
+
+# MORE THAN CONTAINER AND POINTER TO DOCKER FILE
+version: "3"
+services:
+  api_service:
+    build: .
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - mysql_db
+    command: sh -c './wait-for mysql_db:3306 -- npm start'
+
+    networks:
+      - app-network
+
+  mysql_db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: testDb
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+
+    networks:
+      - app-network
+
+    volumes:
+      - mysqlvolume:/var/lib/mysql
+
+
+  adminer:
+    image: adminer
+    restart: always  # restart when failure
+    environment:
+      ADMINER_DEFAULT_DB_DRIVER: mysql
+      ADMINER_DEFAULT_DB_HOST: mysql_db
+      ADMINER_DEFAULT_DB_NAME: adminer
+      ADMINER_DESIGN: nette
+      ADMINER_PLUGINS: tables-filter tinymce
+    ports:
+      - 8090:8080
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+   mysqlvolume:
+     driver: local
